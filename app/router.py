@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from .endpoints import salary
+from app.api.endpoints import salary
 
 api_router = APIRouter()
 
