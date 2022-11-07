@@ -1,9 +1,9 @@
 from fastapi.routing import APIRouter
 
 from app.crud.delete import delete_salary
-from ..crud.create import create_salary
-from ..crud.search import search
-from app.schema.salary import SalaryBase, SalarySearch
+from app.crud.create import create_salary
+from app.crud.search import search
+from app.schema.salary import SalaryBase
 
 router = APIRouter()
 
@@ -18,6 +18,17 @@ async def create(payload: SalaryBase):
 @router.post("/delete")
 async def delete(payload: str):
     delete_salary(payload)
+
+@router.get('/test')
+async def test():
+    return ["50K", "60K", "70K", "80K", "90K", "100K", "110K", "120K"]
+
+@router.post('/predict')
+async def predict(jobdesc: str):
+    if jobdesc.lower() == 'foo':
+        return("100k")
+    else:
+        return("10k")
 
 # @router.get("/similar")
 # async def get_similar():
