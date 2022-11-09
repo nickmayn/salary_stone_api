@@ -30,6 +30,13 @@ async def predict(jobdesc: str):
     else:
         return("10k")
 
+@router.post('/skills')
+async def skills(jobdesc: str):
+    if jobdesc == 'foo':
+        return ['python', 'tensorflow', 'elastic', 'spark', 'modeling']
+    else:
+        return ['excel', 'word', 'powerpoint']
+
 # @router.get("/similar")
 # async def get_similar():
 #     get_similar(payload: SalaryBase)
