@@ -1,11 +1,25 @@
 from fastapi.routing import APIRouter
+from salary_stone.salary_extractor import Salary_Extractor
+from salary_stone.skill_extractor import Skill_Extractor
+from salary_stone.metrics import skill_freq, skill_salary_dist, similarity_measure
+import pandas as pd
 
 from app.crud.delete import delete_salary
 from app.crud.create import create_salary
 from app.crud.search import search
 from app.schema.salary import SalaryBase
 
+from ast import literal_eval
+
 router = APIRouter()
+
+salextractor = Salary_Extractor()
+se = Skill_Extractor()
+# TODO make this into where it reads from the database.
+dat = pd.read_csv('processed_dat.csv')
+# Format skills into format required for the method.
+dat['skills'] = dat['skills'].apply(lambda r: literal_eval(r))
+
 
 @router.post('')
 async def find(terms: dict):
@@ -25,17 +39,40 @@ async def test():
 
 @router.post('/predict')
 async def predict(jobdesc: str):
-    if jobdesc.lower() == 'foo':
-        return("100k")
-    else:
-        return("10k")
+    try:
+        ans = salextractor.extract_salary(jobdesc)
+        return f'{round(ans[0])}K-{round(ans[1])}K'
+    except:
+        return ''
 
 @router.post('/skills')
 async def skills(jobdesc: str):
-    if jobdesc == 'foo':
-        return ['python', 'tensorflow', 'elastic', 'spark', 'modeling']
-    else:
-        return ['excel', 'word', 'powerpoint']
+    
+    skill_vec = se.extract_skills(jobdesc)
+    skills, f = skill_freq(skill_vec=skill_vec, data=dat, extracted_scol='skills')
+    dats = []
+    for s, val in zip(skills, f):
+        dats.append({'x': s, 'y':round(100*val)})
+        
+    return dats
+
+@router.get('/skillsalbin')
+async def skillsalbin(jobdesc: str):
+    skill_vec = se.extract_skills(jobdesc)
+    bins = skill_salary_dist(skill_vec = skill_vec, data=dat, extracted_salcol='salary_bins', extracted_scol='skills')
+    res = []
+    for key, val in bins.items():
+        res.append({'name': key, 'data': val})
+    return res
+
+@router.get('/skillsim')
+async def skillsim(jobdesc: str):
+    skill_vec = se.extract_skills(jobdesc)
+    res = similarity_measure(skill_vec=skill_vec, data=dat, topn=5, jobtitle_col='job_title_sim', extracted_scol='skills')
+    score = []
+    for val in res[0]:
+        score.append(round(val*100))
+    return ({'title': list(res[1]), 'score': score})
 
 # @router.get("/similar")
 # async def get_similar():
