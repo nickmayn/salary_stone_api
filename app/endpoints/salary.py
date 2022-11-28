@@ -1,7 +1,9 @@
+from re import M
 from fastapi.routing import APIRouter
 from salary_stone.salary_extractor import Salary_Extractor
 from salary_stone.skill_extractor import Skill_Extractor
 from salary_stone.metrics import skill_freq, skill_salary_dist, similarity_measure
+from salary_stone.skill_recommender import recommend
 import pandas as pd
 
 from app.crud.delete import delete_salary
@@ -74,6 +76,16 @@ async def skillsim(jobdesc: str):
         score.append(round(val*100))
     return ({'title': list(res[1]), 'score': score})
 
-# @router.get("/similar")
-# async def get_similar():
-#     get_similar(payload: SalaryBase)
+@router.get('/recommend')
+async def rec(resume: str):
+    print(resume)
+    skillv = se.extract_skills(resume)
+    skills, vals = recommend(skill_vec=skillv, data=dat, model=salextractor, extracted_scol='skills')
+    res = []
+    for s, val in zip(skills, vals):
+        try: 
+            tmp = round(100*val)
+        except:
+            tmp = val
+        res.append({'recskills': s, 'recskillsalincrease': tmp})
+    return(res)
